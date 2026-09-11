@@ -273,9 +273,16 @@ export function useGame() {
   }, [state.solvedRiddles, state.collectedRelics]);
 
   const resetGame = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
-    messageIdCounter = 1;
-    setState({ ...INITIAL_STATE });
+    setState((s) => {
+      const savedName = s.captainName;
+      messageIdCounter = 1;
+      return {
+        ...INITIAL_STATE,
+        captainName: savedName,
+        screen: 'map',
+        startTime: Date.now(),
+      };
+    });
   }, []);
 
   // Derived data
