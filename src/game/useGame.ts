@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { GameState, LocationId, ScreenName } from './types';
+import type { GameState, LocationId, ScreenName, JourneyMemory } from './types';
 import {
   LOCATIONS,
   LOCATION_MAP,
@@ -32,9 +32,11 @@ const INITIAL_STATE: GameState = {
   startTime: 0,
   endTime: null,
   gameMasterMessages: [],
+  journeyMemories: [],
 };
 
 let messageIdCounter = 1;
+let memoryIdCounter = 1;
 
 function loadState(): GameState {
   try {
@@ -92,15 +94,29 @@ export function useGame() {
       if (s.lives <= 0) return s;
       if (!s.unlockedLocations.includes(locationId)) return s;
       const loc = LOCATION_MAP[locationId];
-      const visited = s.visitedLocations.includes(locationId)
+      const alreadyVisited = s.visitedLocations.includes(locationId);
+      const visited = alreadyVisited
         ? s.visitedLocations
         : [...s.visitedLocations, locationId];
       messageIdCounter += 1;
+
+      const newMemories = alreadyVisited
+        ? s.journeyMemories
+        : [...s.journeyMemories, {
+            id: memoryIdCounter++,
+            type: 'visit' as const,
+            locationId,
+            icon: loc.icon,
+            locationName: loc.name,
+            text: `You explored ${loc.name}.`,
+          }];
+
       return {
         ...s,
         screen: 'location',
         currentLocationId: locationId,
         visitedLocations: visited,
+        journeyMemories: newMemories,
         gameMasterMessages: [
           ...s.gameMasterMessages.slice(-4),
           {
@@ -121,7 +137,8 @@ export function useGame() {
       if (s.solvedRiddles.includes(loc.riddle.id)) return s;
 
       const newSolved = [...s.solvedRiddles, loc.riddle.id];
-      const newRelics = loc.relicId && !s.collectedRelics.includes(loc.relicId)
+      const gotNewRelic = !!loc.relicId && !s.collectedRelics.includes(loc.relicId);
+      const newRelics = gotNewRelic && loc.relicId
         ? [...s.collectedRelics, loc.relicId]
         : s.collectedRelics;
       const newCompleted = s.completedLocations.includes(locationId)
@@ -139,12 +156,33 @@ export function useGame() {
       }
 
       const scoreGain = SCORE_VALUES.riddleSolved +
-        (loc.relicId && !s.collectedRelics.includes(loc.relicId) ? SCORE_VALUES.relicFound : 0);
+        (gotNewRelic ? SCORE_VALUES.relicFound : 0);
 
       messageIdCounter += 1;
       const relicMsg = loc.relicId
         ? getRandomMessage('onRelic')
         : getRandomMessage('onSolve');
+
+      const newMemories = [...s.journeyMemories, {
+        id: memoryIdCounter++,
+        type: 'riddle' as const,
+        locationId,
+        icon: '🧩',
+        locationName: loc.name,
+        text: `You solved the riddle at ${loc.name}.`,
+      }];
+
+      if (gotNewRelic && loc.relicId) {
+        const relic = RELICS[loc.relicId];
+        newMemories.push({
+          id: memoryIdCounter++,
+          type: 'relic' as const,
+          locationId,
+          icon: relic.icon,
+          locationName: loc.name,
+          text: `You recovered the ${relic.name}.`,
+        });
+      }
 
       return {
         ...s,
@@ -153,6 +191,7 @@ export function useGame() {
         completedLocations: newCompleted,
         unlockedLocations: newUnlocked,
         score: s.score + scoreGain,
+        journeyMemories: newMemories,
         gameMasterMessages: [
           ...s.gameMasterMessages.slice(-4),
           { id: messageIdCounter, text: relicMsg, tone: 'success' as const },
@@ -213,10 +252,24 @@ export function useGame() {
     setState((s) => {
       if (s.lives <= 0) return s;
       if (s.choicesMade.some((c) => c.locationId === locationId)) return s;
+      const loc = LOCATION_MAP[locationId];
+      const choice = loc.choices?.find((c) => c.id === choiceId);
       messageIdCounter += 1;
+
+      const isCursed = branchId === 'cautious';
+      const newMemories = [...s.journeyMemories, {
+        id: memoryIdCounter++,
+        type: (isCursed ? 'cursed' : 'choice') as JourneyMemory['type'],
+        locationId,
+        icon: choice?.icon ?? '⚔',
+        locationName: loc.name,
+        text: `You chose: ${choice?.label ?? branchId}.`,
+      }];
+
       return {
         ...s,
         choicesMade: [...s.choicesMade, { locationId, choiceId, branchId }],
+        journeyMemories: newMemories,
         gameMasterMessages: [
           ...s.gameMasterMessages.slice(-4),
           { id: messageIdCounter, text: 'Your choice has been etched into the map. The path shifts accordingly.', tone: 'info' as const },
@@ -276,6 +329,7 @@ export function useGame() {
     setState((s) => {
       const savedName = s.captainName;
       messageIdCounter = 1;
+      memoryIdCounter = 1;
       return {
         ...INITIAL_STATE,
         captainName: savedName,

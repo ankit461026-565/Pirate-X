@@ -72,6 +72,17 @@ export interface MapLocation {
   requiresRelics?: RelicId[];
 }
 
+export type MemoryType = 'visit' | 'riddle' | 'relic' | 'choice' | 'cursed' | 'danger';
+
+export interface JourneyMemory {
+  id: number;
+  type: MemoryType;
+  locationId: LocationId;
+  icon: string;
+  locationName: string;
+  text: string;
+}
+
 export interface GameState {
   captainName: string;
   screen: ScreenName;
@@ -89,4 +100,5 @@ export interface GameState {
   startTime: number;
   endTime: number | null;
   gameMasterMessages: { id: number; text: string; tone: 'success' | 'warning' | 'info' }[];
+  journeyMemories: JourneyMemory[];
 }

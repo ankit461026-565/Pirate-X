@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RotateCcw, Heart, Puzzle, Map as MapIcon, Gem, Clock, Compass, ArrowLeft } from 'lucide-react';
+import { RotateCcw, Heart, Puzzle, Map as MapIcon, Gem, Clock, Compass, ArrowLeft, Waves } from 'lucide-react';
 import type { GameState } from '@/game/types';
 import type { GameAPI } from '@/game/useGame';
 import { determineEnding, RELICS } from '@/game/data';
@@ -167,6 +167,30 @@ export function EndingScreen({ state, game, onReturnToMap }: EndingScreenProps) 
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* The Sea Remembers — journey memories */}
+        {showStats && state.journeyMemories.length > 0 && (
+          <div className="dark-panel p-5 mb-8 animate-fade-in-up" style={{ animationDelay: '0.4s', opacity: 0 }}>
+            <div className="flex items-center gap-2 mb-4 justify-center">
+              <Waves className="w-5 h-5 text-ocean-400" />
+              <h2 className="section-title text-xs">The Sea Remembers</h2>
+            </div>
+            <p className="pirate-text text-sm text-parchment-300 italic text-center mb-4">
+              The sea remembers...
+            </p>
+            <ul className="space-y-2 text-left">
+              {state.journeyMemories
+                .filter((m) => m.type === 'relic' || m.type === 'choice' || m.type === 'cursed' || m.type === 'riddle')
+                .slice(-5)
+                .map((mem) => (
+                  <li key={mem.id} className="flex items-start gap-2 text-sm text-parchment-300">
+                    <span className="text-base shrink-0">{mem.icon}</span>
+                    <span className="leading-relaxed">{mem.text}</span>
+                  </li>
+                ))}
+            </ul>
           </div>
         )}
 

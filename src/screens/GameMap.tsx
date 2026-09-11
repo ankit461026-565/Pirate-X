@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
-import { Lock, Check, MapPin, Gem, Puzzle, Chrome as Home } from 'lucide-react';
+import { Lock, Check, MapPin, Gem, Puzzle, Chrome as Home, Waves } from 'lucide-react';
 import type { GameState, LocationId } from '@/game/types';
 import { LOCATIONS, LOCATION_MAP, MAP_PATHS, RELICS } from '@/game/data';
 import type { GameAPI } from '@/game/useGame';
 import { ParticleBackground } from '@/components/ParticleBackground';
 import { Modal } from '@/components/Modal';
+import { SeaRemembersModal } from '@/components/SeaRemembersModal';
 
 interface GameMapProps {
   state: GameState;
@@ -15,6 +16,7 @@ interface GameMapProps {
 }
 
 export function GameMap({ state, game, onOpenInventory, onOpenHowToPlay, onBackHome }: GameMapProps) {
+  const [showSeaRemembers, setShowSeaRemembers] = useState(false);
   const [hoveredId, setHoveredId] = useState<LocationId | null>(null);
   const [selectedId, setSelectedId] = useState<LocationId | null>(null);
   const [legendFilter, setLegendFilter] = useState<'explored' | 'available' | 'locked' | null>(null);
@@ -148,6 +150,9 @@ export function GameMap({ state, game, onOpenInventory, onOpenHowToPlay, onBackH
             const isHovered = hoveredId === loc.id;
             const isSelected = selectedId === loc.id;
             const isVault = loc.id === 'treasure-vault';
+            const hasRelicMemory = state.journeyMemories.some((m) => m.type === 'relic' && m.locationId === loc.id);
+            const hasCursedMemory = state.journeyMemories.some((m) => m.type === 'cursed' && m.locationId === loc.id);
+            const hasChoiceMemory = state.journeyMemories.some((m) => (m.type === 'choice' || m.type === 'cursed') && m.locationId === loc.id);
 
             return (
               <div key={loc.id}>
@@ -182,6 +187,8 @@ export function GameMap({ state, game, onOpenInventory, onOpenHowToPlay, onBackH
                       ${unlocked && !completed ? 'animate-node-pulse' : ''}
                       ${isHovered && unlocked ? 'scale-125' : ''}
                       ${!unlocked && isHovered ? 'scale-110' : ''}
+                      ${hasChoiceMemory && completed ? 'shadow-[0_0_12px_rgba(212,168,60,0.4)]' : ''}
+                      ${hasCursedMemory ? 'shadow-[0_0_12px_rgba(139,44,44,0.5)]' : ''}
                     `}
                     style={{ width: 'clamp(36px, 5vw, 52px)', height: 'clamp(36px, 5vw, 52px)' }}
                   >
@@ -196,6 +203,18 @@ export function GameMap({ state, game, onOpenInventory, onOpenHowToPlay, onBackH
                     {completed && (
                       <div className="absolute -top-1 -right-1 bg-gold-400 text-ocean-900 rounded-full w-5 h-5 flex items-center justify-center">
                         <Check className="w-3 h-3" strokeWidth={3} />
+                      </div>
+                    )}
+
+                    {hasRelicMemory && (
+                      <div className="absolute -bottom-1 -left-1 bg-gold-500/90 text-ocean-900 rounded-full w-5 h-5 flex items-center justify-center text-[10px]" aria-label="Relic found here">
+                        💎
+                      </div>
+                    )}
+
+                    {hasCursedMemory && (
+                      <div className="absolute -bottom-1 -right-1 bg-cursed-500/90 text-parchment-100 rounded-full w-5 h-5 flex items-center justify-center text-[10px]" aria-label="Cursed choice made here">
+                        ☠
                       </div>
                     )}
 
@@ -423,6 +442,14 @@ export function GameMap({ state, game, onOpenInventory, onOpenHowToPlay, onBackH
             Relics ({state.collectedRelics.length}/{game.totalRelics})
           </button>
           <button
+            onClick={() => setShowSeaRemembers(true)}
+            className="btn-outline text-sm flex items-center gap-2"
+            aria-label="View your journey memories"
+          >
+            <Waves className="w-4 h-4" />
+            The Sea Remembers
+          </button>
+          <button
             onClick={onOpenHowToPlay}
             className="btn-outline text-sm"
             aria-label="How to play"
@@ -431,6 +458,14 @@ export function GameMap({ state, game, onOpenInventory, onOpenHowToPlay, onBackH
           </button>
         </div>
       </div>
+
+      {/* Sea Remembers Modal */}
+      <SeaRemembersModal
+        open={showSeaRemembers}
+        onClose={() => setShowSeaRemembers(false)}
+        state={state}
+        game={game}
+      />
     </div>
   );
 }
