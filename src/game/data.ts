@@ -248,6 +248,7 @@ export interface Ending {
   icon: string;
   condition: (state: {
     lives: number;
+    maxLives: number;
     solvedRiddles: number;
     collectedRelics: number;
     totalRiddles: number;
@@ -266,8 +267,9 @@ export const ENDINGS: Ending[] = [
     condition: (s) =>
       s.solvedRiddles >= s.totalRiddles &&
       s.collectedRelics >= s.totalRelics &&
-      s.lives >= 2 &&
-      s.choicesMade.includes('courageous'),
+      s.lives >= s.maxLives &&
+      (s.choicesMade.includes('courageous') || s.choicesMade.includes('curious')) &&
+      !s.choicesMade.includes('cautious'),
   },
   {
     id: 'cursed',
@@ -276,8 +278,8 @@ export const ENDINGS: Ending[] = [
     narrative:
       'You found the treasure, but the map demanded a price. Whether through lost lives, abandoned relics, or a cautious heart that shied from the dark path — the ocean claims its toll. The relics you failed to collect whisper your name in the dark. You are wealthy and wretched, powerful and imprisoned. The treasure is yours — but so is the curse.',
     condition: (s) =>
-      s.solvedRiddles >= 4 &&
-      (s.lives < 2 || s.collectedRelics < s.totalRelics || s.choicesMade.includes('cautious')),
+      s.choicesMade.includes('cautious') ||
+      (s.solvedRiddles >= 4 && s.lives < 2),
   },
   {
     id: 'lost',
@@ -291,6 +293,7 @@ export const ENDINGS: Ending[] = [
 
 export function determineEnding(state: {
   lives: number;
+  maxLives: number;
   solvedRiddles: number;
   collectedRelics: number;
   totalRiddles: number;

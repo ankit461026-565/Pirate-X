@@ -16,6 +16,7 @@ export function EndingScreen({ state, game, onReturnToMap }: EndingScreenProps) 
 
   const ending = determineEnding({
     lives: state.lives,
+    maxLives: state.maxLives,
     solvedRiddles: state.solvedRiddles.length,
     collectedRelics: state.collectedRelics.length,
     totalRiddles: game.totalRiddles,
