@@ -35,7 +35,16 @@ export function EndingScreen({ state, game, onReturnToMap }: EndingScreenProps) 
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-ocean-900 via-ocean-800 to-ocean-900" />
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage:
+            "url('https://images.pexels.com/photos/37859/sailing-ship-vessel-boat-sea-37859.jpeg?auto=compress&cs=tinysrgb&h=650&w=940')",
+        }}
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 bg-ocean-900/70" />
+      <div className="absolute inset-0 bg-gradient-to-b from-ocean-900/65 via-ocean-900/55 to-ocean-900/85" />
 
       {/* Ending-specific atmosphere */}
       <div

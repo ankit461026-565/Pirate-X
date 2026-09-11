@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Lock, Check, MapPin, Gem, Puzzle, Home } from 'lucide-react';
+import { Lock, Check, MapPin, Gem, Puzzle, Chrome as Home } from 'lucide-react';
 import type { GameState, LocationId } from '@/game/types';
 import { LOCATIONS, LOCATION_MAP, MAP_PATHS, RELICS } from '@/game/data';
 import type { GameAPI } from '@/game/useGame';
@@ -56,8 +56,16 @@ export function GameMap({ state, game, onOpenInventory, onOpenHowToPlay, onBackH
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-ocean-800 via-ocean-900 to-ocean-800" />
-      <div className="absolute inset-0 bg-map-grid opacity-40" />
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/assets/images/1000_F_121801600_CMAfgueYYBiq0w88E1r5Lkklp7Hl1AO4~2.jpg.jpeg')",
+        }}
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 bg-ocean-900/65" />
+      <div className="absolute inset-0 bg-gradient-to-b from-ocean-900/60 via-ocean-900/50 to-ocean-900/85" />
+      <div className="absolute inset-0 bg-map-grid opacity-30" />
       <div
         className="absolute inset-0"
         style={{
@@ -89,7 +97,7 @@ export function GameMap({ state, game, onOpenInventory, onOpenHowToPlay, onBackH
 
         {/* SVG Map container */}
         <div
-          className="relative w-full rounded-2xl border-2 border-gold-700/40 overflow-hidden bg-ocean-900/50"
+          className="relative w-full rounded-2xl border-2 border-gold-700/50 overflow-hidden bg-ocean-900/25 shadow-[0_12px_50px_rgba(0,0,0,0.45)]"
           style={{ aspectRatio: '16 / 10', maxHeight: '70vh' }}
         >
           {/* Decorative compass rose */}
