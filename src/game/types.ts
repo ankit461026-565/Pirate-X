@@ -8,7 +8,8 @@ export type ScreenName =
   | 'map'
   | 'location'
   | 'treasure'
-  | 'ending';
+  | 'ending'
+  | 'gameover';
 
 export type LocationId =
   | 'blackwater-bay'

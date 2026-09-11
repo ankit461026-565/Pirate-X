@@ -89,6 +89,7 @@ export function useGame() {
 
   const visitLocation = useCallback((locationId: LocationId) => {
     setState((s) => {
+      if (s.lives <= 0) return s;
       if (!s.unlockedLocations.includes(locationId)) return s;
       const loc = LOCATION_MAP[locationId];
       const visited = s.visitedLocations.includes(locationId)
@@ -114,6 +115,7 @@ export function useGame() {
 
   const solveRiddle = useCallback((locationId: LocationId) => {
     setState((s) => {
+      if (s.lives <= 0) return s;
       const loc = LOCATION_MAP[locationId];
       if (!loc.riddle) return s;
       if (s.solvedRiddles.includes(loc.riddle.id)) return s;
@@ -163,6 +165,18 @@ export function useGame() {
     setState((s) => {
       const newLives = s.lives - 1;
       messageIdCounter += 1;
+      if (newLives <= 0) {
+        return {
+          ...s,
+          lives: 0,
+          screen: 'gameover',
+          endTime: Date.now(),
+          gameMasterMessages: [
+            ...s.gameMasterMessages.slice(-4),
+            { id: messageIdCounter, text: 'Your three lives are gone. The sea claims this voyage.', tone: 'warning' as const },
+          ],
+        };
+      }
       const msg = newLives <= 1
         ? getRandomMessage('onLowLives')
         : getRandomMessage('onWrong');
@@ -179,6 +193,7 @@ export function useGame() {
 
   const useHint = useCallback((locationId: LocationId) => {
     setState((s) => {
+      if (s.lives <= 0) return s;
       const loc = LOCATION_MAP[locationId];
       if (!loc.riddle) return s;
       messageIdCounter += 1;
@@ -196,6 +211,7 @@ export function useGame() {
 
   const makeChoice = useCallback((locationId: LocationId, choiceId: string, branchId: string) => {
     setState((s) => {
+      if (s.lives <= 0) return s;
       if (s.choicesMade.some((c) => c.locationId === locationId)) return s;
       messageIdCounter += 1;
       return {
@@ -223,13 +239,16 @@ export function useGame() {
   }, []);
 
   const openTreasureVault = useCallback(() => {
-    setState((s) => ({
+    setState((s) => {
+      if (s.lives <= 0) return s;
+      return {
       ...s,
       screen: 'treasure',
       currentLocationId: 'treasure-vault',
       endTime: Date.now(),
       score: s.score + s.lives * SCORE_VALUES.lifeBonus,
-    }));
+      };
+    });
   }, []);
 
   const goToEnding = useCallback(() => {

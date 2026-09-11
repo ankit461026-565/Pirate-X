@@ -10,6 +10,7 @@ import { GameMap } from '@/screens/GameMap';
 import { LocationView } from '@/screens/LocationView';
 import { TreasureVault } from '@/screens/TreasureVault';
 import { EndingScreen } from '@/screens/EndingScreen';
+import { GameOverScreen } from '@/screens/GameOverScreen';
 
 function App() {
   const game = useGame();
@@ -49,6 +50,11 @@ function App() {
         onBack={() => game.setScreen('landing')}
       />
     );
+  }
+
+  // Game over — all lives lost
+  if (state.screen === 'gameover') {
+    return <GameOverScreen game={game} />;
   }
 
   // Treasure vault cinematic
