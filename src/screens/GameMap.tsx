@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Lock, Check, MapPin, Gem, Puzzle, Home } from 'lucide-react';
 import type { GameState, LocationId } from '@/game/types';
 import { LOCATIONS, LOCATION_MAP, MAP_PATHS, RELICS } from '@/game/data';
 import type { GameAPI } from '@/game/useGame';
 import { ParticleBackground } from '@/components/ParticleBackground';
+import { Modal } from '@/components/Modal';
 
 interface GameMapProps {
   state: GameState;
@@ -16,6 +17,7 @@ interface GameMapProps {
 export function GameMap({ state, game, onOpenInventory, onOpenHowToPlay, onBackHome }: GameMapProps) {
   const [hoveredId, setHoveredId] = useState<LocationId | null>(null);
   const [selectedId, setSelectedId] = useState<LocationId | null>(null);
+  const [legendFilter, setLegendFilter] = useState<'explored' | 'available' | 'locked' | null>(null);
 
   const canAccessTreasure = game.canAccessTreasure();
   const progress = game.treasureProgress();
@@ -24,6 +26,21 @@ export function GameMap({ state, game, onOpenInventory, onOpenHowToPlay, onBackH
     if (id === 'treasure-vault') return canAccessTreasure;
     return state.unlockedLocations.includes(id);
   };
+
+  const exploredLocations = useMemo(
+    () => LOCATIONS.filter((l) => state.visitedLocations.includes(l.id)),
+    [state.visitedLocations]
+  );
+
+  const availableLocations = useMemo(
+    () => LOCATIONS.filter((l) => isLocationUnlocked(l.id) && !state.visitedLocations.includes(l.id)),
+    [state.unlockedLocations, state.visitedLocations, canAccessTreasure]
+  );
+
+  const lockedLocations = useMemo(
+    () => LOCATIONS.filter((l) => !isLocationUnlocked(l.id)),
+    [state.unlockedLocations, canAccessTreasure]
+  );
 
   const handleNodeClick = (id: LocationId) => {
     if (id === 'treasure-vault' && canAccessTreasure) {
@@ -317,11 +334,74 @@ export function GameMap({ state, game, onOpenInventory, onOpenHowToPlay, onBackH
 
         {/* Legend */}
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-xs text-parchment-300">
-          <LegendItem icon={<div className="w-3 h-3 rounded-full bg-gold-500/25 border border-gold-400" />} label="Explored" />
-          <LegendItem icon={<div className="w-3 h-3 rounded-full bg-ocean-600 border border-gold-400/80 animate-node-pulse" />} label="Available" />
-          <LegendItem icon={<div className="w-3 h-3 rounded-full bg-ocean-800 border border-ocean-500/50" />} label="Locked" />
+          <LegendButton
+            icon={<div className="w-3 h-3 rounded-full bg-gold-500/25 border border-gold-400" />}
+            label="Explored"
+            count={exploredLocations.length}
+            onClick={() => setLegendFilter('explored')}
+          />
+          <LegendButton
+            icon={<div className="w-3 h-3 rounded-full bg-ocean-600 border border-gold-400/80 animate-node-pulse" />}
+            label="Available"
+            count={availableLocations.length}
+            onClick={() => setLegendFilter('available')}
+          />
+          <LegendButton
+            icon={<div className="w-3 h-3 rounded-full bg-ocean-800 border border-ocean-500/50" />}
+            label="Locked"
+            count={lockedLocations.length}
+            onClick={() => setLegendFilter('locked')}
+          />
         </div>
       </div>
+
+      {/* Legend modal */}
+      <Modal
+        open={legendFilter !== null}
+        onClose={() => setLegendFilter(null)}
+        title={
+          legendFilter === 'explored'
+            ? 'Explored Locations'
+            : legendFilter === 'available'
+              ? 'Available Locations'
+              : 'Locked Locations'
+        }
+        maxWidth="max-w-md"
+      >
+        {legendFilter === 'explored' && (
+          <LegendLocationList
+            locations={exploredLocations}
+            emptyText="No locations explored yet. Set sail and begin your voyage!"
+            statusIcon={(loc) => (
+              <span className="text-gold-400 font-bold" aria-label="Explored">
+                <Check className="w-4 h-4" strokeWidth={3} />
+              </span>
+            )}
+          />
+        )}
+        {legendFilter === 'available' && (
+          <LegendLocationList
+            locations={availableLocations}
+            emptyText="No locations waiting. Explore the map to reveal new paths!"
+            statusIcon={() => (
+              <span className="text-gold-300/80" aria-label="Available">
+                <MapPin className="w-4 h-4" />
+              </span>
+            )}
+          />
+        )}
+        {legendFilter === 'locked' && (
+          <LegendLocationList
+            locations={lockedLocations}
+            emptyText="All locations are unlocked. The seas are yours!"
+            statusIcon={() => (
+              <span className="text-ocean-400" aria-label="Locked">
+                <Lock className="w-4 h-4" />
+              </span>
+            )}
+          />
+        )}
+      </Modal>
 
       {/* Quick action bar */}
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-ocean-900/90 backdrop-blur-md border-t border-gold-700/30 px-4 py-3">
@@ -347,12 +427,62 @@ export function GameMap({ state, game, onOpenInventory, onOpenHowToPlay, onBackH
   );
 }
 
-function LegendItem({ icon, label }: { icon: React.ReactNode; label: string }) {
+function LegendButton({
+  icon,
+  label,
+  count,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  count: number;
+  onClick: () => void;
+}) {
   return (
-    <div className="flex items-center gap-1.5">
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-ocean-700/50 hover:text-gold-200 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-gold-400/40"
+      aria-label={`Show ${label} locations`}
+    >
       {icon}
       <span className="uppercase tracking-wider">{label}</span>
-    </div>
+      <span className="text-gold-500/60 font-bold tabular-nums">({count})</span>
+    </button>
+  );
+}
+
+function LegendLocationList({
+  locations,
+  emptyText,
+  statusIcon,
+}: {
+  locations: typeof LOCATIONS;
+  emptyText: string;
+  statusIcon: (loc: (typeof LOCATIONS)[number]) => React.ReactNode;
+}) {
+  if (locations.length === 0) {
+    return (
+      <p className="text-parchment-400 text-sm italic text-center py-6">{emptyText}</p>
+    );
+  }
+  return (
+    <ul className="space-y-2">
+      {locations.map((loc) => (
+        <li
+          key={loc.id}
+          className="flex items-center gap-3 rounded-lg bg-ocean-800/60 border border-gold-700/20 px-3 py-2.5"
+        >
+          <span className="text-lg shrink-0">{loc.icon}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-gold-200 text-sm font-bold uppercase tracking-wide truncate">
+              {loc.name}
+            </p>
+            <p className="text-parchment-400 text-xs truncate">{loc.description}</p>
+          </div>
+          {statusIcon(loc)}
+        </li>
+      ))}
+    </ul>
   );
 }
 
